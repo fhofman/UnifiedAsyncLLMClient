@@ -1,6 +1,7 @@
+from openai import AsyncOpenAI, APIError, RateLimitError, APIConnectionError
+from typing import List, AsyncGenerator
 from BaseLLMClient import BaseLLMClient
-from OpenAI import OpenAI
-
+from schemas import ChatMessage, ModelResponse, Provider
 
 
 class OpenAIClient(BaseLLMClient):
@@ -11,7 +12,7 @@ class OpenAIClient(BaseLLMClient):
         self.temperature = temperature
         self.max_tokens = max_tokens
 
-    async def generate(self, ChatMessages: List[ChatMessage]) -> ModelResponse:
+    async def generate(self, messages: List[ChatMessage]) -> ModelResponse:
         try:
             response = await self._client.chat.completions.create(
                 model=self.model,
@@ -22,7 +23,7 @@ class OpenAIClient(BaseLLMClient):
             return ModelResponse(
                 provider=Provider.OPENAI,
                 model=self.model,
-                content=response.choices[0].message.content,
+                content=response.choices[0].message.content or "",
             )
         except RateLimitError as e:
             return ModelResponse(provider=Provider.OPENAI, model=self.model, content="",
@@ -33,8 +34,9 @@ class OpenAIClient(BaseLLMClient):
         except APIError as e:
             return ModelResponse(provider=Provider.OPENAI, model=self.model, content="",
                                   error=f"Error de la API de OpenAI: {e}")
-
-
+        except Exception as e:
+            return ModelResponse(provider=Provider.OPENAI, model=self.model, content="",
+                                  error=f"Error desconocido: {e}")
 
     async def generate_stream(self, messages: List[ChatMessage]) -> AsyncGenerator[str, None]:
         try:
@@ -46,8 +48,12 @@ class OpenAIClient(BaseLLMClient):
                 stream=True,
             )
             async for chunk in stream:
+                if not chunk.choices:
+                    continue
                 delta = chunk.choices[0].delta.content
                 if delta:
                     yield delta
         except (RateLimitError, APIConnectionError, APIError) as e:
             yield f"\n[⚠️ Error durante el streaming: {e}]"
+        except Exception as e:
+            yield f"\n[⚠️ Error desconocido: {e}]"
