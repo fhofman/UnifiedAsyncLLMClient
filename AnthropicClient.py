@@ -17,11 +17,15 @@ class AnthropicClient(BaseLLMClient):
         self.max_tokens = max_tokens
 
     def _build_kwargs(self, messages: List[ChatMessage]) -> dict:
-        """Anthropic no acepta el rol 'system' dentro de messages: va en un parámetro aparte."""
+        """Anthropic no acepta el rol 'system' dentro de messages: va en un parámetro aparte.
+
+        El SDK 1.x ya no acepta `temperature` como argumento, así que se manda por extra_body.
+        Ojo: Opus 4.7+ y Sonnet 5/5.5 rechazan temperature; Haiku 4.5 y la línea 4.6 lo aceptan.
+        """
         kwargs = dict(
             model=self.model,
             max_tokens=self.max_tokens,
-            temperature=self.temperature,
+            extra_body={"temperature": self.temperature},
             messages=[m.model_dump() for m in messages if m.role != "system"],
         )
         system = "\n\n".join(m.content for m in messages if m.role == "system")

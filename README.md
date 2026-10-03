@@ -84,7 +84,7 @@ async def main():
     config = LLMConfig(
         provider="anthropic",
         api_key=SecretStr(os.environ["ANTHROPIC_API_KEY"]),
-        model="claude-sonnet-5-5",
+        model="claude-haiku-4-5",
         temperature=0.7,
         max_tokens=300,
     )
@@ -118,7 +118,7 @@ Solo cambian `provider`, `api_key` y `model`. El resto del código queda igual:
 
 ```python
 LLMConfig(provider="openai",    api_key=SecretStr(os.environ["OPENAI_API_KEY"]),    model="gpt-4o-mini")
-LLMConfig(provider="anthropic", api_key=SecretStr(os.environ["ANTHROPIC_API_KEY"]), model="claude-sonnet-5-5")
+LLMConfig(provider="anthropic", api_key=SecretStr(os.environ["ANTHROPIC_API_KEY"]), model="claude-haiku-4-5")
 LLMConfig(provider="gemini",    api_key=SecretStr(os.environ["GOOGLE_API_KEY"]),    model="gemini-2.5-flash")
 ```
 
@@ -171,6 +171,8 @@ Un rol distinto de esos tres lanza un `ValidationError`.
 | `await generate(messages)`              | `ModelResponse`             |
 | `generate_stream(messages)`             | `AsyncGenerator[str, None]` |
 | `AsyncLLMManager.from_config(config)`   | El cliente concreto (`BaseLLMClient`) |
+
+> **Nota sobre `temperature` en Anthropic:** los modelos Claude más nuevos (Opus 4.7 en adelante, Sonnet 5 y 5.5) rechazan `temperature` con un error 400. Usá un modelo que lo acepte, como `claude-haiku-4-5` o la línea 4.6.
 
 ## Manejo de errores
 
