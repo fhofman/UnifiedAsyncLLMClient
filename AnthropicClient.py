@@ -7,7 +7,6 @@ from anthropic import (
 from BaseLLMClient import BaseLLMClient
 from schemas import ChatMessage, ModelResponse, Provider
 from typing import List, AsyncGenerator
-import asyncio
 
 
 class AnthropicClient(BaseLLMClient):
@@ -17,18 +16,26 @@ class AnthropicClient(BaseLLMClient):
         self.temperature = temperature
         self.max_tokens = max_tokens
 
+    def _build_kwargs(self, messages: List[ChatMessage]) -> dict:
+        """Anthropic no acepta el rol 'system' dentro de messages: va en un parámetro aparte."""
+        kwargs = dict(
+            model=self.model,
+            max_tokens=self.max_tokens,
+            temperature=self.temperature,
+            messages=[m.model_dump() for m in messages if m.role != "system"],
+        )
+        system = "\n\n".join(m.content for m in messages if m.role == "system")
+        if system:
+            kwargs["system"] = system
+        return kwargs
+
     async def generate(self, messages: List[ChatMessage]) -> ModelResponse:
         try:
-            response = await self._client.messages.create(
-                model=self.model,
-                max_tokens=self.max_tokens, 
-                temperature=self.temperature,
-                messages=[m.model_dump() for m in messages],
-            )
+            response = await self._client.messages.create(**self._build_kwargs(messages))
             return ModelResponse(
                 provider=Provider.ANTHROPIC,
                 model=self.model,
-                content=response.content[0].text,
+                content="".join(b.text for b in response.content if b.type == "text"),
             )
         except AnthropicRateLimitError as e:
             return ModelResponse(provider=Provider.ANTHROPIC, model=self.model, content="",
@@ -42,16 +49,10 @@ class AnthropicClient(BaseLLMClient):
         except Exception as e:
             return ModelResponse(provider=Provider.ANTHROPIC, model=self.model, content="",
                                   error=f"Error desconocido: {e}")
-                            
 
     async def generate_stream(self, messages: List[ChatMessage]) -> AsyncGenerator[str, None]:
         try:
-            async with self._client.messages.stream(
-                model=self.model,
-                max_tokens=self.max_tokens,
-                temperature=self.temperature,
-                messages=[m.model_dump() for m in messages],
-            ) as stream:
+            async with self._client.messages.stream(**self._build_kwargs(messages)) as stream:
                 async for texto in stream.text_stream:
                     yield texto
         except (AnthropicRateLimitError, AnthropicConnectionError, AnthropicAPIError) as e:

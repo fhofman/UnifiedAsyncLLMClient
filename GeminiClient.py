@@ -1,7 +1,7 @@
 from BaseLLMClient import BaseLLMClient
 from google import genai
 from google.genai import types
-from typing import List
+from typing import List, AsyncGenerator
 from schemas import ChatMessage, ModelResponse
 from schemas import Provider
 
@@ -40,7 +40,7 @@ class GeminiClient(BaseLLMClient):
                     system_instruction=system_instruction,
                 ),
             )
-            return ModelResponse(provider=Provider.GEMINI, model=self.model, content=response.text)
+            return ModelResponse(provider=Provider.GEMINI, model=self.model, content=response.text or "")
         except Exception as e:
             return ModelResponse(provider=Provider.GEMINI, model=self.model, content="",
                                   error=f"Error de la API de Gemini: {e}")
