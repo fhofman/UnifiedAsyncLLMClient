@@ -1,3 +1,12 @@
+from BaseLLMClient import BaseLLMClient
+from typing import List, AsyncGenerator
+from schemas import ChatMessage, ModelResponse
+from openai import OpenAIClient 
+from anthropic import AnthropicClient 
+from gemini import GeminiClient
+
+
+
 class AsyncLLMManager:
     def __init__(self, config: LLMConfig):
         self.config = config
@@ -26,6 +35,6 @@ class AsyncLLMManager:
     async def generate(self, messages: List[ChatMessage]) -> ModelResponse:
         return await self._clients.generate(messages)
     
-    async def generate_stream(self, messages: List[ChatMessage]) -> AsyncGenerator[str, None]:
-        async for chunk in self._client.generate_stream(messages):
+    async def generate_stream(messages: List[ChatMessage]) -> AsyncGenerator[str, None]:
+        async for chunk in self._clients.generate_stream(messages):
             yield chunk if chunk else "\n"
