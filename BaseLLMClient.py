@@ -5,17 +5,17 @@ from schemas import ChatMessage, ModelResponse
 class BaseLLMClient(ABC):
 
     @abstractmethod
-	async def generate(self, messages: List[ChatMessage])-> ModelResponse
-		raise NotImplementedError
-	
+    async def generate(self, messages: List[ChatMessage])-> ModelResponse:
+        raise NotImplementedError
+    
 
-	@abstractmethod
+    @abstractmethod
     async def generate_stream(self, messages: List[ChatMessage]) -> AsyncGenerator[str, None]:
-		raise NotImplementedError
+        raise NotImplementedError
 
 
 
 
 
 
-	
+    

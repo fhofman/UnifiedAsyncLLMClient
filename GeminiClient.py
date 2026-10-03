@@ -8,15 +8,15 @@ from schemas import Provider
 
 class GeminiClient(BaseLLMClient):
 
-	def __init__(self, api_key: str, model: str, temperature: float, max_tokens: int):
-		self._client = genai.Client(api_key=api_key)
-		self.model = model
-		self.temperature = temperature
-		self.max_tokens = max_tokens
+    def __init__(self, api_key: str, model: str, temperature: float, max_tokens: int):
+        self._client = genai.Client(api_key=api_key)
+        self.model = model
+        self.temperature = temperature
+        self.max_tokens = max_tokens
 
 
 
-	def _convertir_mensajes(self, messages: List[ChatMessage]):
+    def _convertir_mensajes(self, messages: List[ChatMessage]):
         """Gemini separa el system prompt del resto, y llama 'model' al rol del asistente."""
         contents = []
         system_instruction = None
@@ -28,7 +28,7 @@ class GeminiClient(BaseLLMClient):
                 contents.append(types.Content(role=rol_gemini, parts=[types.Part(text=m.content)]))
         return contents, system_instruction
 
-	async def generate(self, messages: List[ChatMessage]) -> ModelResponse:
+    async def generate(self, messages: List[ChatMessage]) -> ModelResponse:
         try:
             contents, system_instruction = self._convertir_mensajes(messages)
             response = await self._client.aio.models.generate_content(
